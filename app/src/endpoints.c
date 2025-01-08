@@ -23,12 +23,6 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 
-
-#if IS_ENABLED(CONFIG_ZMK_PLOVER_HID)
-static int send_plover_report();
-#endif /* IS_ENABLED(CONFIG_ZMK_PLOVER_HID) */
-
-
 #define DEFAULT_TRANSPORT                                                                          \
     COND_CODE_1(IS_ENABLED(CONFIG_ZMK_BLE), (ZMK_TRANSPORT_BLE), (ZMK_TRANSPORT_USB))
 
@@ -201,48 +195,13 @@ int zmk_endpoints_send_report(uint16_t usage_page) {
 
     case HID_USAGE_CONSUMER:
         return send_consumer_report();
-
-#if IS_ENABLED(CONFIG_ZMK_PLOVER_HID)
-    case (HID_USAGE_VENDOR_PLOVER & 0xFF):
-        return send_plover_report();
-#endif /* IS_ENABLED(CONFIG_ZMK_PLOVER_HID) */
     }
 
     LOG_ERR("Unsupported usage page %d", usage_page);
     return -ENOTSUP;
 }
 
-#if IS_ENABLED(CONFIG_ZMK_PLOVER_HID)
-static int send_plover_report() {
-    struct zmk_hid_plover_report *plover_report = zmk_hid_get_plover_report();
-    switch (current_instance.transport) {
-#if IS_ENABLED(CONFIG_ZMK_USB)
-    case ZMK_TRANSPORT_USB: {
-        int err = zmk_usb_hid_send_report((uint8_t *)plover_report, sizeof(*plover_report));
-        if (err) {
-            LOG_ERR("FAILED TO SEND OVER USB: %d", err);
-        }
-        return err;
-    }
-#endif /* IS_ENABLED(CONFIG_ZMK_USB) */
-
-#if IS_ENABLED(CONFIG_ZMK_BLE)
-    case ZMK_TRANSPORT_BLE: {
-        int err = zmk_hog_send_plover_report(&plover_report->body);
-        if (err) {
-            LOG_ERR("FAILED TO SEND OVER HOG: %d", err);
-        }
-        return err;
-    }
-#endif /* IS_ENABLED(CONFIG_ZMK_BLE) */
-    default:
-        LOG_ERR("Unhandled endpoint transport %d", current_instance.transport);
-        return -ENOTSUP;
-    }
-}
-#endif /* IS_ENABLED(CONFIG_ZMK_PLOVER_HID) */
-
-#if IS_ENABLED(CONFIG_ZMK_MOUSE)
+#if IS_ENABLED(CONFIG_ZMK_POINTING)
 int zmk_endpoints_send_mouse_report() {
     switch (current_instance.transport) {
     case ZMK_TRANSPORT_USB: {
@@ -276,7 +235,7 @@ int zmk_endpoints_send_mouse_report() {
     LOG_ERR("Unhandled endpoint transport %d", current_instance.transport);
     return -ENOTSUP;
 }
-#endif // IS_ENABLED(CONFIG_ZMK_MOUSE)
+#endif // IS_ENABLED(CONFIG_ZMK_POINTING)
 
 #if IS_ENABLED(CONFIG_SETTINGS)
 
@@ -373,21 +332,12 @@ static int zmk_endpoints_init(void) {
 void zmk_endpoints_clear_current(void) {
     zmk_hid_keyboard_clear();
     zmk_hid_consumer_clear();
-
-#if IS_ENABLED(CONFIG_ZMK_PLOVER_HID)
-    zmk_hid_plover_clear();
-#endif /* IS_ENABLED(CONFIG_ZMK_PLOVER_HID) */
-
-#if IS_ENABLED(CONFIG_ZMK_MOUSE)
+#if IS_ENABLED(CONFIG_ZMK_POINTING)
     zmk_hid_mouse_clear();
-#endif // IS_ENABLED(CONFIG_ZMK_MOUSE)
+#endif // IS_ENABLED(CONFIG_ZMK_POINTING)
 
     zmk_endpoints_send_report(HID_USAGE_KEY);
     zmk_endpoints_send_report(HID_USAGE_CONSUMER);
-    zmk_endpoints_send_report(HID_USAGE_VENDOR_PLOVER);
-#if IS_ENABLED(CONFIG_ZMK_PLOVER_HID)
-
-#endif /* IS_ENABLED(CONFIG_ZMK_PLOVER_HID) */
 }
 
 static void update_current_endpoint(void) {
