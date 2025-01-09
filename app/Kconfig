@@ -658,8 +658,6 @@ endif # ZMK_LOW_PRIORITY_WORK_QUEUE
 
 endmenu # Advanced
 
-endmenu # ZMK
-
 config KERNEL_BIN_NAME
     default "zmk"
 
