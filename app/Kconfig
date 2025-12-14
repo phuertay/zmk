@@ -254,11 +254,7 @@ menu "Stenography Support"
 config ZMK_PLOVER_HID
     bool "Support for the Plover HID Stenography Protocol"
 
-# Stenography Support
-endmenu
-
-#Basic Keyboard Setup
-endmenu
+endmenu # Stenography Support
 
 menu "Keymaps"
 
