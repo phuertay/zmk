@@ -222,6 +222,13 @@ int zmk_usb_hid_send_consumer_report(void) {
     return zmk_usb_hid_send_report((uint8_t *)report, sizeof(*report));
 }
 
+#if IS_ENABLED(CONFIG_ZMK_PLOVER_HID)
+int zmk_usb_hid_send_plover_report(void) {
+    struct zmk_hid_plover_report *report = zmk_hid_get_plover_report();
+    return zmk_usb_hid_send_report((uint8_t *)report, sizeof(*report));
+}
+#endif /* IS_ENABLED(CONFIG_ZMK_PLOVER_HID) */
+
 #if IS_ENABLED(CONFIG_ZMK_POINTING)
 int zmk_usb_hid_send_mouse_report() {
 #if IS_ENABLED(CONFIG_ZMK_USB_BOOT)

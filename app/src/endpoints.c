@@ -274,11 +274,10 @@ static int send_plover_report() {
     switch (current_instance.transport) {
     case ZMK_TRANSPORT_NONE:
         return 0;
-        
+
     case ZMK_TRANSPORT_USB: {
 #if IS_ENABLED(CONFIG_ZMK_USB)
-        struct zmk_hid_plover_report *plover_report = zmk_hid_get_plover_report();
-        int err = zmk_usb_hid_send_report((uint8_t *)plover_report, sizeof(*plover_report));
+        int err = zmk_usb_hid_send_plover_report();
         if (err) {
             LOG_ERR("FAILED TO SEND OVER USB: %d", err);
         }
@@ -291,12 +290,12 @@ static int send_plover_report() {
 
     case ZMK_TRANSPORT_BLE: {
 #if IS_ENABLED(CONFIG_ZMK_BLE)
+        struct zmk_hid_plover_report *plover_report = zmk_hid_get_plover_report();
         int err = zmk_hog_send_plover_report(&plover_report->body);
         if (err) {
             LOG_ERR("FAILED TO SEND OVER HOG: %d", err);
         }
         return err;
-    }
 #else
         LOG_ERR("BLE HOG endpoint is not supported");
         return -ENOTSUP;
