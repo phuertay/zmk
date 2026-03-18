@@ -452,17 +452,15 @@ void send_plover_report_callback(struct k_work *work) {
         }
 
         struct bt_gatt_notify_params notify_params = {
-            // FIXME: Try to understand this offset calculation, because I just brute-forced it
-            // until it worked.
-            // 13 seems to be working, but might be wrong
-            // or 14
             .attr = &hog_svc.attrs[13],
             .data = &report,
             .len = sizeof(report),
         };
 
         int err = bt_gatt_notify_cb(conn, &notify_params);
-        if (err) {
+        if (err == -EPERM) {
+            bt_conn_set_security(conn, BT_SECURITY_L2);
+        } else if (err) {
             LOG_DBG("Error notifying %d", err);
         }
         bt_conn_unref(conn);
