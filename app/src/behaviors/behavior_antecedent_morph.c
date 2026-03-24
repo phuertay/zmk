@@ -66,17 +66,12 @@ static int antecedent_morph_keycode_state_changed_listener(const zmk_event_t *eh
 
   struct zmk_keycode_state_changed *ev = as_zmk_keycode_state_changed(eh);
 
-  int32_t code = ((ev->implicit_modifiers & 0xff) << 24) | ((ev->usage_page & 0xff) << 16) | (ev->keycode & 0xffff);
-
-  LOG_DBG("%s keycode %d; page %d; implicit mods %d; explicit mods %d; key code 0x%08x",ev->state ? "down" : "up",ev->keycode,ev->usage_page,ev->implicit_modifiers,ev->explicit_modifiers,code);
   if ((ev->state) && ((ev->keycode < 0xe0) || (ev->keycode > 0xff))) {
-    LOG_DBG("global <code_pressed> variable changes from 0x%08x to 0x%08x",code_pressed,code);
-    code_pressed = code;
+    code_pressed = ((ev->implicit_modifiers & 0xff) << 24) | ((ev->usage_page & 0xff) << 16) | (ev->keycode & 0xffff);
     time_pressed = ev->timestamp;
   }
 
   if (ev->keycode > 0xff) {
-    LOG_DBG("event dropped");
     return(ZMK_EV_EVENT_HANDLED);
   } else {
     return(ZMK_EV_EVENT_BUBBLE);
@@ -104,11 +99,14 @@ static int on_antecedent_morph_binding_pressed(struct zmk_behavior_binding *bind
 
   for (int i=0;i<cfg->antecedents_len;i++) {
     if (code_pressed == cfg->antecedents[i]) {
-      morph = i;
+      if (((int32_t)(event.timestamp - time_pressed)) < cfg->max_delay_ms) {
+        morph = i;
+      }
+      break;
     }
   }
 
-  if ((morph >= 0) && ((int32_t)(event.timestamp-time_pressed)) < cfg->max_delay_ms) {
+  if (morph >= 0) {
 
     // If the the delay between the most recent key release and the pressing of the current behavior is less than the
     // configured maximum delay and if the most recently released key is among the recorded antecedents, issue the
